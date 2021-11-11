@@ -1,12 +1,20 @@
-import time
-from flask import Flask
+from datetime import datetime
+from time import sleep
 
-app = Flask(__name__)
+from flask import Blueprint, jsonify
 
-@app.route("/")
-def index():
-    return "Hello les pds!"
+bp = Blueprint('api', __name__, url_prefix='/api')
 
-@app.route('/time')
-def get_current_time():
-    return {'time': time.time()}
+
+@bp.route('/time')
+def time():
+    sleep(0.25)
+    return jsonify(now=datetime.now().replace(microsecond=0).isoformat())
+
+
+@bp.route('/greet/<name>')
+@bp.route('/greet-stranger/', defaults={'name': 'mysterious person'})
+def greeting(name):
+    sleep(0.25)
+    msg = 'Welcome, ' + name
+    return jsonify(greeting=msg)
