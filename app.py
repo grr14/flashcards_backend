@@ -32,3 +32,5 @@ def create_app(test_config=None):
 
     return app
 
+my_app=create_app()
+
