@@ -1,5 +1,6 @@
 from flask import Flask
 import os
+from . import api
 
 def create_app(test_config=None):
     # create and configure the app
@@ -27,7 +28,6 @@ def create_app(test_config=None):
     def hello():
         return 'Hello, World!'
 
-    from . import api
     app.register_blueprint(api.bp)
 
     return app
