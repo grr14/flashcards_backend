@@ -28,3 +28,4 @@ htmlcov/
 node_modules/
 
 .how_to
+.env

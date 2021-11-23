@@ -3,6 +3,8 @@ from time import sleep
 
 from flask import Blueprint, jsonify
 
+from api.database.model_users import Users
+
 bp = Blueprint('api', __name__, url_prefix='/api')
 
 
@@ -13,8 +15,8 @@ def time():
 
 
 @bp.route('/greet/<name>')
-@bp.route('/greet-stranger/', defaults={'name': 'mysterious person'})
 def greeting(name):
     sleep(0.25)
-    msg = 'Welcome, ' + name
-    return jsonify(greeting=msg)
+    user = Users.query.filter_by(username=name).first()
+    print(user)
+    return jsonify(id=user.id,username=user.username,email=user.email,password=user.password,is_active=user.is_active,last_login=user.last_login,date_joined=user.date_joined)

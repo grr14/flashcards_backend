@@ -1,13 +1,25 @@
 from flask import Flask
+import flask_cors
 import os
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+cors = flask_cors.CORS()
+db = SQLAlchemy()
+migrate = Migrate()
 
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
-    app.config.from_mapping(
-        SECRET_KEY='dev',
-        DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
-    )
+
+    cors.init_app(app)
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ["DB_LINK"]
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
@@ -22,10 +34,11 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # a simple page that says hello
-    @app.route('/hello')
-    def hello():
-        return 'Hello, World!'
+    db.init_app(app)
+    migrate.init_app(app, db)
+
+    with app.app_context():
+        db.create_all()
 
     from api import api
     app.register_blueprint(api.bp)
