@@ -4,9 +4,10 @@ from time import sleep
 from flask import Blueprint, jsonify, request
 
 from api.database.model_users import Users
-from extensions import guard
+from extensions import guard, db
 
 from flask_praetorian import auth_required, current_user
+import pytz
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -59,7 +60,37 @@ def refresh():
     ret = {'access_token': new_token}
     return ret, 200
   
-  
+@bp.route('/register', methods=['GET','POST'])
+def register():
+
+    username, email, password = request.get_json(force=True).values()
+    print(f'username={username} email={email} password={password}')
+
+    # check no missing fields
+    if not username or not password or not email:
+        ret = {'message':'incorrect request'}
+        return ret, 400
+    else:
+        # check the user is not already in db
+        if db.session.query(Users).filter_by(username=username).count() > 0:
+            return {'message':'user already exists'}
+        # add the user to the db
+        else:
+            timestamp = datetime.now(pytz.timezone('Europe/Paris'))
+            db.session.add(Users(
+                username=username,
+                email=email,
+                hashed_password=guard.hash_password(password),
+                is_active=True,
+                last_login=timestamp,
+                date_joined=timestamp,
+                roles='user'
+            ))
+            db.session.commit()
+
+            return {'message':'user registered successfully'}, 200
+
+
 @bp.route('/protected')
 @auth_required
 def protected():

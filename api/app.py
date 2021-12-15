@@ -37,9 +37,6 @@ def create_app(test_config=None):
 
     register_extensions(app)
 
-    #pw = guard.hash_password("password")
-    #print(pw)
-
     with app.app_context():
         db.create_all()
 
