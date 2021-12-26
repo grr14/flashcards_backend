@@ -42,6 +42,9 @@ def login():
     user = guard.authenticate(username, password)
     print("user=",user)
     ret = {'access_token': guard.encode_jwt_token(user)}
+    user = db.session.query(Users).filter_by(username=username).first()
+    user.last_login = datetime.now(pytz.timezone('Europe/Paris'))
+    db.session.commit()
     print("ret=",ret)
     return (jsonify(ret), 200)
 
@@ -90,7 +93,6 @@ def register():
 
             return {'message':'user registered successfully'}, 200
 
-
 @bp.route('/protected')
 @auth_required
 def protected():
@@ -103,3 +105,17 @@ def protected():
     """
     print("protected")
     return {'message': f'protected endpoint (allowed user {current_user().username})'}
+
+@bp.route('/me')
+@auth_required
+def me():
+    print(current_user())
+    user = current_user()
+    return {
+        'username': user.username,
+        'email':user.email,
+        'is_active':user.is_active,
+        'last_login':user.last_login,
+        'date_joined' : user.date_joined,
+        'roles':user.roles
+    },200
