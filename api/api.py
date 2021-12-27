@@ -2,6 +2,7 @@ from datetime import datetime
 from time import sleep
 
 from flask import Blueprint, jsonify, request
+from flask_praetorian.exceptions import AuthenticationError
 
 from api.database.model_users import Users
 from extensions import guard, db
@@ -71,7 +72,7 @@ def register():
 
     # check no missing fields
     if not username or not password or not email:
-        ret = {'message':'incorrect request'}
+        ret = {'message':'Incorrect request'}
         return ret, 400
     else:
         # check the user is not already in db
@@ -92,6 +93,57 @@ def register():
             db.session.commit()
 
             return {'message':'user registered successfully'}, 200
+
+@bp.route('/change-email', methods=['PUT'])
+def change_email():
+    username, newEmail, newEmailConfirmation = request.get_json(force=True).values()
+    print(f'username={username} newEmail={newEmail} newEmailConfirmation={newEmailConfirmation}')
+    if not username or not newEmail or not newEmailConfirmation:
+        return {'message':'Incorrect request'}, 400
+
+    # pick user, change mail
+    user = db.session.query(Users).filter_by(username=username).first()
+    user.email = newEmail
+    db.session.commit()
+    return {'message': f'Email changed successfully to {newEmail}.'}, 200
+
+@bp.route('/change-password', methods=['PUT'])
+def change_password():
+    username, oldPassword, newPassword, newPasswordConfirmation = request.get_json(force=True).values()
+    print(f'username={username} oldPassword={oldPassword} newPassword={newPassword} newPasswordConfirmation={newPasswordConfirmation}')
+    if not username or not oldPassword or not newPassword or not newPasswordConfirmation:
+        return {'message': 'Incorrect request'}, 400
+
+    # check the oldPassword and newPassword are different
+    if oldPassword == newPassword:
+        return {
+            'message':'New and old passwords must be different.'
+        }, 400
+    # get the user
+    user = db.session.query(Users).filter_by(username=username).first()
+
+    # check the old password
+    try:
+        guard.authenticate(username,oldPassword)
+    except AuthenticationError: # no match: reject 
+        return {'message':'Incorrect password.'},400
+    else:     # match: update the password
+        user.hashed_password = guard.hash_password(newPassword)
+        db.session.commit()
+        return {'message': 'Password have been changed.'},200
+
+# passing the username in body doesn't seem to word for DELETE method
+@bp.route('/delete-account/<username>', methods=['DELETE'])
+def delete_account(username):
+    print(f'username={username}')
+    if not username:
+        return {'message':'Incorrect request'},400
+    # delete the user
+    user = db.session.query(Users).filter_by(username=username).first()
+    db.session.delete(user)
+    db.session.commit()
+    return {'message':'Account has been deleted'}, 200
+
 
 @bp.route('/protected')
 @auth_required
