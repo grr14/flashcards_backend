@@ -1,5 +1,6 @@
 from extensions import db
 
+
 class Users(db.Model):
 
     __tablename__ = "USERS"
@@ -8,9 +9,9 @@ class Users(db.Model):
     username = db.Column(db.String(150), unique=True, nullable=False)
     email = db.Column(db.String(150), unique=True)
     hashed_password = db.Column(db.String(150), nullable=False)
-    is_active = db.Column(db.Boolean, nullable=False,default=True)
-    last_login = db.Column(db.DateTime(timezone=True),nullable=False)
-    date_joined = db.Column(db.DateTime(timezone=True),nullable=False)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    last_login = db.Column(db.DateTime(timezone=True), nullable=False)
+    date_joined = db.Column(db.DateTime(timezone=True), nullable=False)
     roles = db.Column(db.String(150))
 
     @property
