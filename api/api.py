@@ -155,7 +155,7 @@ def change_password():
     else:  # match: update the password
         user.hashed_password = guard.hash_password(newPassword)
         db.session.commit()
-        return {"message": "Password have been changed."}, 200
+        return {"message": "Password has been changed."}, 200
 
 
 # passing the username in body doesn't seem to word for DELETE method
@@ -197,4 +197,17 @@ def me():
         "last_login": user.last_login,
         "date_joined": user.date_joined,
         "roles": user.roles,
+        "biography": user.biography,
     }, 200
+
+
+@bp.route("/biography", methods=["PUT"])
+def edit_biography():
+    username, biography = request.get_json(force=True).values()
+    if not username or not biography:
+        return {"message": "Incorrect request"}, 200
+    print(f"username={username} biography={biography[0:25]}")
+    user = db.session.query(Users).filter_by(username=username).first()
+    user.biography = biography
+    db.session.commit()
+    return {"message": "Biography changed with success."}, 200

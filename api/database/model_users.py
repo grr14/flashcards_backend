@@ -13,6 +13,7 @@ class Users(db.Model):
     last_login = db.Column(db.DateTime(timezone=True), nullable=False)
     date_joined = db.Column(db.DateTime(timezone=True), nullable=False)
     roles = db.Column(db.String(150))
+    biography = db.Column(db.String(2000), nullable=True)
 
     @property
     def identity(self):
@@ -75,4 +76,4 @@ class Users(db.Model):
         return self.is_active
 
     def __repr__(self):
-        return f"User('{self.id}','{self.username}', '{self.email}', '{self.hashed_password}', '{self.is_active}', '{self.last_login}', '{self.date_joined}','{self.roles}')"
+        return f"User('{self.id}','{self.username}', '{self.email}', '{self.hashed_password}', '{self.is_active}', '{self.last_login}', '{self.date_joined}','{self.roles}','{self.biography[0:25]}')"
