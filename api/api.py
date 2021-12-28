@@ -50,14 +50,19 @@ def login():
     username = req.get("username", None)
     password = req.get("password", None)
     print(username, password)
-    user = guard.authenticate(username, password)
-    print("user=", user)
-    ret = {"access_token": guard.encode_jwt_token(user)}
-    user = db.session.query(Users).filter_by(username=username).first()
-    user.last_login = datetime.now(pytz.timezone("Europe/Paris"))
-    db.session.commit()
-    print("ret=", ret)
-    return (jsonify(ret), 200)
+    try:
+        user = guard.authenticate(username, password)
+        print("user=", user)
+    except AuthenticationError as error:
+        print(f"message={error.message} code={error.status_code}")
+        return {"message": error.message}, error.status_code
+    else:
+        ret = {"access_token": guard.encode_jwt_token(user)}
+        user = db.session.query(Users).filter_by(username=username).first()
+        user.last_login = datetime.now(pytz.timezone("Europe/Paris"))
+        db.session.commit()
+        print("ret=", ret)
+        return (jsonify(ret), 200)
 
 
 @bp.route("/refresh", methods=["POST"])
@@ -84,12 +89,13 @@ def register():
 
     # check no missing fields
     if not username or not password or not email:
-        ret = {"message": "Incorrect request"}
-        return ret, 400
+        return {"message": "Incorrect request"}, 400
     else:
         # check the user is not already in db
         if db.session.query(Users).filter_by(username=username).count() > 0:
-            return {"message": "user already exists"}
+            return {"message": "Username is taken."}, 400
+        elif db.session.query(Users).filter_by(email=email).count() > 0:
+            return {"message": "Email is already used."}, 400
         # add the user to the db
         else:
             timestamp = datetime.now(pytz.timezone("Europe/Paris"))
@@ -106,7 +112,7 @@ def register():
             )
             db.session.commit()
 
-            return {"message": "user registered successfully"}, 200
+            return {"message": "User registered successfully."}, 200
 
 
 @bp.route("/change-email", methods=["PUT"])
