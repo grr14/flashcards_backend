@@ -1,7 +1,7 @@
 from flask import Flask
 import os
 from dotenv import load_dotenv
-import api.database.model_users as users
+import api.database.model_user as user
 from extensions import db, cors, migrate, guard
 
 load_dotenv()
@@ -10,7 +10,7 @@ load_dotenv()
 def register_extensions(app):
     db.init_app(app)
     cors.init_app(app)
-    guard.init_app(app, users.Users)
+    guard.init_app(app, user.User)
     migrate.init_app(app, db)
 
 
@@ -42,9 +42,9 @@ def create_app(test_config=None):
     with app.app_context():
         db.create_all()
 
-        if db.session.query(users.Users).filter_by(username="test").count() < 1:
+        if db.session.query(user.User).filter_by(username="test").count() < 1:
             db.session.add(
-                users.Users(
+                user.user(
                     username="test",
                     hashed_password=guard.hash_password("password"),
                     email="test@test.fr",
@@ -54,8 +54,9 @@ def create_app(test_config=None):
             )
             db.session.commit()
 
-    from api import api
+    from api import user_api, deck_api
 
-    app.register_blueprint(api.bp)
+    app.register_blueprint(user_api.bp)
+    app.register_blueprint(deck_api.bp)
 
     return app

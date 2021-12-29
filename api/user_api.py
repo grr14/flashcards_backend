@@ -4,7 +4,7 @@ from time import sleep
 from flask import Blueprint, jsonify, request
 from flask_praetorian.exceptions import AuthenticationError
 
-from api.database.model_users import Users
+from api.database.model_user import User
 from extensions import guard, db
 
 from flask_praetorian import auth_required, current_user
@@ -22,7 +22,7 @@ def time():
 @bp.route("/greet/<name>")
 def greeting(name):
     sleep(0.25)
-    user = Users.query.filter_by(username=name).first()
+    user = User.query.filter_by(username=name).first()
     print(user)
     return jsonify(
         id=user.id,
@@ -58,7 +58,7 @@ def login():
         return {"message": error.message}, error.status_code
     else:
         ret = {"access_token": guard.encode_jwt_token(user)}
-        user = db.session.query(Users).filter_by(username=username).first()
+        user = db.session.query(User).filter_by(username=username).first()
         user.last_login = datetime.now(pytz.timezone("Europe/Paris"))
         db.session.commit()
         print("ret=", ret)
@@ -92,15 +92,15 @@ def register():
         return {"message": "Incorrect request"}, 400
     else:
         # check the user is not already in db
-        if db.session.query(Users).filter_by(username=username).count() > 0:
+        if db.session.query(User).filter_by(username=username).count() > 0:
             return {"message": "Username is taken."}, 400
-        elif db.session.query(Users).filter_by(email=email).count() > 0:
+        elif db.session.query(User).filter_by(email=email).count() > 0:
             return {"message": "Email is already used."}, 400
         # add the user to the db
         else:
             timestamp = datetime.now(pytz.timezone("Europe/Paris"))
             db.session.add(
-                Users(
+                User(
                     username=username,
                     email=email,
                     hashed_password=guard.hash_password(password),
@@ -125,7 +125,7 @@ def change_email():
         return {"message": "Incorrect request"}, 400
 
     # pick user, change mail
-    user = db.session.query(Users).filter_by(username=username).first()
+    user = db.session.query(User).filter_by(username=username).first()
     user.email = newEmail
     db.session.commit()
     return {"message": f"Email changed successfully to {newEmail}."}, 200
@@ -151,7 +151,7 @@ def change_password():
     if oldPassword == newPassword:
         return {"message": "New and old passwords must be different."}, 400
     # get the user
-    user = db.session.query(Users).filter_by(username=username).first()
+    user = db.session.query(User).filter_by(username=username).first()
 
     # check the old password
     try:
@@ -171,7 +171,7 @@ def delete_account(username):
     if not username:
         return {"message": "Incorrect request"}, 400
     # delete the user
-    user = db.session.query(Users).filter_by(username=username).first()
+    user = db.session.query(User).filter_by(username=username).first()
     db.session.delete(user)
     db.session.commit()
     return {"message": "Account has been deleted"}, 200
@@ -197,6 +197,7 @@ def me():
     print(current_user())
     user = current_user()
     return {
+        "id": user.id,
         "username": user.username,
         "email": user.email,
         "is_active": user.is_active,
@@ -213,7 +214,7 @@ def edit_biography():
     if not username or not biography:
         return {"message": "Incorrect request"}, 200
     print(f"username={username} biography={biography[0:25]}")
-    user = db.session.query(Users).filter_by(username=username).first()
+    user = db.session.query(User).filter_by(username=username).first()
     user.biography = biography
     db.session.commit()
     return {"message": "Biography changed with success."}, 200
