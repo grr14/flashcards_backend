@@ -1,6 +1,7 @@
 from flask import Flask
 import os
 from dotenv import load_dotenv
+from api import card_api
 import api.database.model_user as user
 from extensions import db, cors, migrate, guard
 
@@ -54,9 +55,10 @@ def create_app(test_config=None):
             )
             db.session.commit()
 
-    from api import user_api, deck_api
+    from api import user_api, deck_api, card_api
 
     app.register_blueprint(user_api.bp)
     app.register_blueprint(deck_api.bp)
+    app.register_blueprint(card_api.bp)
 
     return app
