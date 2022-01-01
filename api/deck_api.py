@@ -25,6 +25,8 @@ def get_deck(deck_id):
 
 @bp.route("/get_all/<user_id>", methods=["GET"])
 def get_all_decks(user_id):
+    if not user_id:
+        return {"message": "Incorrect request"}
     decks = Deck.query.filter_by(creator_id=user_id).all()
     print(decks)
     return jsonify(count=len(decks), decks=[d.as_dict() for d in decks])
