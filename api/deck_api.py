@@ -1,13 +1,18 @@
-from flask import Blueprint, jsonify
+from os import times
+from flask import Blueprint, jsonify, request
 from api.database.model_deck import Deck
 from api.database.model_card import Card
 from extensions import db
+from datetime import datetime
+import pytz
 
 bp = Blueprint("deck", __name__, url_prefix="/deck")
 
 
 @bp.route("/get/<deck_id>")
 def get_deck(deck_id):
+    if not deck_id:
+        return {"message": "Incorrect request"}, 400
     deck = db.session.query(Deck).filter_by(id=deck_id).first()
     cards = db.session.query(Card).filter_by(deck_id=deck_id).all()
     # print(deck)
@@ -24,13 +29,55 @@ def get_deck(deck_id):
     )
 
 
+@bp.route("/create/<creator_id>", methods=["POST"])
+def create(creator_id):
+    req = request.get_json(force=True)
+    name = req.get("name")
+    theme = req.get("theme")
+    is_public = req.get("is_public")
+
+    print(f"name={name} theme={theme} is_public={is_public} creator_id={creator_id}")
+
+    if creator_id is None and name is None and theme is None and not is_public is None:
+        return {"message": "Incorrect request"}, 400
+
+    timestamp = datetime.now(pytz.timezone("Europe/Paris"))
+
+    db.session.add(
+        Deck(
+            name=name,
+            theme=theme,
+            created_at=timestamp,
+            updated_at=timestamp,
+            creator_id=creator_id,
+            is_public=is_public,
+        )
+    )
+
+    db.session.commit()
+    return {"message": "Deck has been created successfully."}
+
+
 @bp.route("/get_all/<user_id>", methods=["GET"])
 def get_all_decks(user_id):
     if not user_id:
-        return {"message": "Incorrect request"}
+        return {"message": "Incorrect request"}, 400
     decks = db.session.query(Deck).filter_by(creator_id=user_id).all()
+
+    decks = [d.as_dict() for d in decks]
+    decks_id = [d["id"] for d in decks]  # for each deck we get its id
+    counts = [
+        db.session.query(Card).filter_by(deck_id=id).count() for id in decks_id
+    ]  # for each deck we get its number of cards
+
+    for index, deck in enumerate(decks):
+        deck["nb_cards"] = counts[
+            index
+        ]  # we add the number of card of each deck to the response
+
     print(decks)
-    return jsonify(count=len(decks), decks=[d.as_dict() for d in decks])
+
+    return jsonify(count=len(decks), decks=decks)
 
 
 @bp.route("/delete/<deck_id>", methods=["DELETE"])
