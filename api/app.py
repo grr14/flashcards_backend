@@ -1,7 +1,6 @@
 from flask import Flask
 import os
 from dotenv import load_dotenv
-from api import card_api
 import api.database.model_user as user
 from extensions import db, cors, migrate, guard
 

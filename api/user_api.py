@@ -1,8 +1,9 @@
 from datetime import datetime
+from os import error
 from time import sleep
 
 from flask import Blueprint, jsonify, request
-from flask_praetorian.exceptions import AuthenticationError
+from flask_praetorian.exceptions import AuthenticationError, PraetorianError
 
 from api.database.model_user import User
 from extensions import guard, db
@@ -76,9 +77,18 @@ def refresh():
     """
     print("refresh request")
     old_token = request.get_data()
-    new_token = guard.refresh_jwt_token(old_token)
-    ret = {"access_token": new_token}
-    return ret, 200
+    print(f"old_token = {old_token}")
+    if old_token is None:
+        print(f"Refresh token was not sent.")
+    try:
+        new_token = guard.refresh_jwt_token(old_token)
+    except PraetorianError as err:
+        print(f"error = {err}")
+        return
+    else:
+        print(f"new token={new_token}")
+        ret = {"access_token": new_token}
+        return ret, 200
 
 
 @bp.route("/register", methods=["GET", "POST"])
