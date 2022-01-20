@@ -77,6 +77,7 @@ def refresh():
     """
     print("refresh request")
     old_token = request.get_data()
+    print(request)
     print(f"old_token = {old_token}")
     if old_token is None:
         print(f"Refresh token was not sent.")
