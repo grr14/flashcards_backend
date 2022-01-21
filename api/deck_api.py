@@ -2,6 +2,7 @@ from os import times
 from flask import Blueprint, jsonify, request
 from api.database.model_deck import Deck
 from api.database.model_card import Card
+from api.database.model_user import User
 from extensions import db
 from datetime import datetime
 import pytz
@@ -92,3 +93,35 @@ def delete(deck_id):
     db.session.commit()
     print(f"cards={cards}")
     return {"message": "Deck has been deleted successfully"}
+
+
+@bp.route("/get_all_public", methods=["GET"])
+def get_all_public():
+    decks = db.session.query(Deck).filter_by(is_public=True).all()
+    decks = [d.as_dict() for d in decks]
+
+    decks_id = [d["id"] for d in decks]  # for each deck we get its id
+    counts = [
+        db.session.query(Card).filter_by(deck_id=id).count() for id in decks_id
+    ]  # for each deck we get its number of cards
+
+    for index, deck in enumerate(decks):
+        deck["nb_cards"] = counts[
+            index
+        ]  # we add the number of card of each deck to the response
+
+    decks_creator_id = [
+        d["creator_id"] for d in decks
+    ]  # for each deck we get its creator_id
+    creator_names = [
+        db.session.query(User).filter_by(id=id).first() for id in decks_creator_id
+    ]
+
+    for index, deck in enumerate(decks):
+        deck["creator_name"] = creator_names[
+            index
+        ].username  # we add the number of card of each deck to the response
+
+    print(decks)
+
+    return jsonify(decks=decks)
